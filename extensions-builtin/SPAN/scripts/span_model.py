@@ -8,17 +8,17 @@ from modules import devices, modelloader, script_callbacks, shared, upscaler_uti
 from modules.upscaler import Upscaler, UpscalerData
 from modules_forge.forge_util import prepare_free_memory
 
-SWINIR_MODEL_URL = "https://huggingface.co/datasets/dputilov/TTL/resolve/main/4x-ClearRealityV1.pth"
+SPAN_MODEL_URL = "https://huggingface.co/datasets/dputilov/TTL/resolve/main/4x-ClearRealityV1.pth"
 
 logger = logging.getLogger(__name__)
 
 
-class UpscalerSwinIR(Upscaler):
+class UpscalerSPAN(Upscaler):
     def __init__(self, dirname):
         self._cached_model = None           # keep the model when SWIN_torch_compile is on to prevent re-compile every runs
         self._cached_model_config = None    # to clear '_cached_model' when changing model (v1/v2) or settings
         self.name = "SPAN"
-        self.model_url = SWINIR_MODEL_URL
+        self.model_url = SPAN_MODEL_URL
         self.model_name = "4x-ClearRealityV1.pth"
         self.user_path = dirname
         super().__init__()
@@ -49,12 +49,11 @@ class UpscalerSwinIR(Upscaler):
             self._cached_model = model
             self._cached_model_config = current_config
 
-        img = upscaler_utils.upscale_2(
-            img,
+        img = upscaler_utils.upscale_with_model(
             model,
+            img,
             tile_size=shared.opts.SPAN_tile,
             tile_overlap=shared.opts.SPAN_tile_overlap,
-            scale=model.scale,
             desc="SPAN",
         )
         devices.torch_gc()
@@ -87,6 +86,6 @@ def on_ui_settings():
     import gradio as gr
 
     shared.opts.add_option("SPAN_tile", shared.OptionInfo(192, "Tile size for all SPAN.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")))
-    shared.opts.add_option("SPAN_tile_overlap", shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('upscaling', "Upscaling")))
+    shared.opts.add_option("SPAN_tile_overlap", shared.OptionInfo(32, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('upscaling', "Upscaling")))
     
 script_callbacks.on_ui_settings(on_ui_settings)
